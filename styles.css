@@ -125,7 +125,7 @@ select {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   place-items: center;
   grid-gap: 40px;
-  padding: 20px;
+  padding: 40px;
 }
 
 h2 {
@@ -199,7 +199,8 @@ strong {
 
 @media screen and (max-width: 600px) {
 
-  header search {
+  header search,
+  .home main {
     padding: 20px;
   }
 
