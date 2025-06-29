@@ -1,167 +1,282 @@
-let scrollPos;
+const appContainer = document.getElementById('app-container');
+const themeBtn = document.getElementById('theme-toggle');
 
-const modeBtn = document.querySelector("#mode-btn");
-const backBtn = document.querySelector("#back-btn");
-const searchEl = document.querySelector("header search");
-const formEl = searchEl.querySelector("search form");
-const inputEl = searchEl.querySelector(`input[name="country"]`);
-const selectEl = searchEl.querySelector(`select[name="region"]`);
-const mainEl = document.querySelector("main");
+const API_BASE_URL = 'https://restcountries.com/v3.1';
 
-// dynamic routing and content load
-async function handleRouting() {
-  const path = window.location.hash.slice(1);
+let allCountries = [];
+let regionFilter = 'All';
+let searchTerm = '';
 
-  if (!scrollPos && !path) {
-    scrollPos = window.scrollY;
+async function fetchData(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn(`Data not found for URL: ${url}`);
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    if (appContainer.innerHTML.includes('Loading countries...')) {
+      appContainer.innerHTML = `<p class="error-message">Failed to load data. Please check your internet connection or try again later.</p>`;
+    }
+    return null;
   }
+}
 
-  if (!path) {
-    // mainEl.scrollTo(0, scrollPos || 0);
-    updateStyle("home");
+function applyTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  
+  const icon = theme === 'dark' ? 'moon' : 'sun';
+  themeBtn.innerHTML = `
+    <span class="theme-icon" data-icon="${icon}" aria-hidden="true"></span>
+    ${theme.charAt(0).toUpperCase() + theme.slice(1)} Mode
+  `;
+}
 
-    const resp = await fetch("https://restcountries.com/v3.1/all?fields=name,flags,cca3,population,region,capital");
+function toggleTheme() {
+  const currentTheme = document.body.getAttribute('data-theme');
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  applyTheme(newTheme);
+}
 
-    const data = await resp.json();
+const userTheme = localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)') ? 'dark' : 'light');
+applyTheme(userTheme);
+if (themeBtn) {
+  themeBtn.addEventListener('click', toggleTheme);
+}
 
-    mainEl.innerHTML = data.map((country) => `
-    <article data-country="${country.cca3}" data-region="${country.region}">
-      <figure>
-        <img src="${country.flags.png}" alt="${country.flags.alt || `The flag of ${country.name.common}`}">
-      </figure>
-      <div>
-        <h2>${country.name.common}</h2>
-        <p><strong>Population</strong>: ${country.population.toLocaleString()}</p>
-        <p><strong>Region</strong>: ${country.region}</p>
-        <p><strong>Capital</strong>: ${country.capital.join(", ")}</p>
-      </div>
-    </article>
-    `).join("");
-  } else {
-    mainEl.scrollTo(0, 0);
-    updateStyle("country");
-
-    const resp = await fetch(`https://restcountries.com/v3.1/alpha/${path}?fields=name,flags,population,region,subregion,capital,tld,currencies,languages,borders`);
-
-    const country = await resp?.json();
-
-    if (!resp.ok || !country)
-      return mainEl.innerHTML = `<p class="not-found">Error: No data found for this country code!</p>`;
-
-    // Extracting nativeName
-    const nativeName = Object.values(country.name.nativeName)[0].common || "N/A";
-
-    // Extracting currencies 
-    const currencies = Object.values(country.currencies).map(ccy => ccy.name).join(", ") || "None";
-
-    // Extracting languages
-    const languages = Object.values(country.languages).map(lang => lang).join(", ") || "None";
-
-    // Generating border country links
-    const borders = country.borders.map((border) => `
-      <a href="#/${border}">${border}</a>`).join("") || `<a href="javascript:void(0);">N/A</a>`;
-
-    // Injecting country details
-    mainEl.innerHTML = `
-      <figure>
-        <img src="${country.flags.png}" alt="${country.flags.alt || `The flag of ${country.name.common}`}">
-      </figure>
-      <article>
-        <h2>${country.name.common}</h2>
-        <section class="details">
-          <div>
-            <p><strong>Native Name:</strong> ${nativeName}</p>
+function createCountryCard(country) {
+  const card = document.createElement('div');
+  card.classList.add('country-card');
+  card.dataset.countryCode = country.cca3;
+  
+  card.innerHTML = `
+        <img src="${country.flags.png}" alt="${country.name.common} flag">
+        <div class="card-info">
+            <h2>${country.name.common}</h2>
             <p><strong>Population:</strong> ${country.population.toLocaleString()}</p>
             <p><strong>Region:</strong> ${country.region}</p>
-            <p><strong>Sub Region:</strong> ${country.subregion}</p>
-            <p><strong>Capital:</strong> ${country.capital.join(", ")}</p>
-          </div>
-          <div>
-            <p><strong>Top Level Domain:</strong> ${country.tld.join(", ") || "N/A"}</p>
-            <p><strong>Currencies:</strong> ${currencies}</p>
-            <p><strong>Languages:</strong> ${languages}</p>
-          </div>
-        </section>
-        <section class="borders">
-          <h3><strong>Border&nbsp;Countries:</strong></h3>
-          <div class="border-links">${borders}</div>
-        </section>
-      </article>
+            <p><strong>Capital:</strong> ${country.capital ? country.capital[0] : 'N/A'}</p>
+        </div>
     `;
+  
+  card.addEventListener('click', () => {
+    navigateTo(`/${encodeURIComponent(country.cca3)}`);
+  });
+  
+  return card;
+}
+
+async function renderHomePage() {
+  appContainer.innerHTML = `
+        <div class="controls">
+            <div class="search-container">
+                <img src="./assets/search-icon.svg" alt="Search Icon" class="search-icon">
+                <input type="text" id="search-input" placeholder="Search for a country..." value="${searchTerm}">
+            </div>
+            <div class="filter-container" id="filter-container">
+                <div class="filter-dropdown-header" id="filter-dropdown-header">
+                    Filter by Region
+                    <img src="./assets/chevron-down-icon.svg" alt="Dropdown Icon" class="dropdown-icon">
+                </div>
+                <ul class="filter-options" id="filter-options">
+                    <li data-region="Africa">Africa</li>
+                    <li data-region="Americas">Americas</li>
+                    <li data-region="Asia">Asia</li>
+                    <li data-region="Europe">Europe</li>
+                    <li data-region="Oceania">Oceania</li>
+                    <li data-region="All">All Regions</li>
+                </ul>
+            </div>
+        </div>
+        <div class="countries-grid" id="countries-grid">
+            <p>Loading countries...</p>
+        </div>
+    `;
+  
+  const searchInput = document.getElementById('search-input');
+  const filterContainer = document.getElementById('filter-container');
+  const filterDropdownHeader = document.getElementById('filter-dropdown-header');
+  const filterOptions = document.getElementById('filter-options');
+  const countriesGrid = document.getElementById('countries-grid');
+  
+  filterOptions.querySelectorAll('li').forEach(li => {
+    if (li.dataset.region === regionFilter) {
+      li.classList.add('selected');
+      filterDropdownHeader.firstChild.nodeValue = regionFilter !== 'All' ? li.textContent : 'Filter by Region';
+    }
+  });
+  
+  if (allCountries.length === 0) {
+    countriesGrid.innerHTML = `<p>Loading countries...</p>`;
+    const data = await fetchData(`${API_BASE_URL}/all?fields=name,flags,cca3,population,region,capital`);
+    if (data) {
+      allCountries = data;
+      populateCountriesGrid();
+    } else {
+      countriesGrid.innerHTML = `<p class="error-message">Failed to load countries.</p>`;
+    }
+  } else {
+    populateCountriesGrid();
+  }
+  
+  searchInput.addEventListener('input', (e) => {
+    searchTerm = e.target.value.toLowerCase();
+    populateCountriesGrid();
+  });
+  
+  filterDropdownHeader.addEventListener('click', (e) => {
+    e.stopPropagation();
+    filterContainer.classList.toggle('active');
+  });
+  
+  filterOptions.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'LI') return;
+    
+    regionFilter = e.target.dataset.region;
+    filterContainer.classList.remove('active');
+    filterDropdownHeader.firstChild.nodeValue = regionFilter !== 'All' ? e.target.textContent : 'Filter by Region';
+    
+    filterOptions.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+    e.target.classList.add('selected');
+    
+    populateCountriesGrid();
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!filterContainer.contains(e.target) && filterContainer.classList.contains('active')) {
+      filterContainer.classList.remove('active');
+    }
+  });
+}
+
+function populateCountriesGrid() {
+  const countriesGrid = document.getElementById('countries-grid');
+  if (!countriesGrid) return;
+  
+  countriesGrid.innerHTML = '';
+  
+  const filteredCountries = allCountries.filter(country => {
+    const matchesSearch = country.name.common.toLowerCase().includes(searchTerm);
+    const matchesRegion = regionFilter === 'All' || country.region === regionFilter;
+    return matchesSearch && matchesRegion;
+  });
+  
+  if (filteredCountries.length === 0) {
+    countriesGrid.innerHTML = `<p class="no-results-message">No countries found matching your criteria.</p>`;
+  } else {
+    filteredCountries.forEach(country => {
+      countriesGrid.appendChild(createCountryCard(country));
+    });
   }
 }
 
-function updateStyle(param) {
-  mainEl.className = param;
-  backBtn.style.display = (param === "country") ? "block" : "none";
-  searchEl.style.display = (param === "home") ? "flex" : "none";
+async function renderDetailPage(countryCode) {
+  appContainer.innerHTML = `
+        <button class="back-button" id="back-button">
+            <img src="./assets/arrow-left-icon.svg" alt="Back Arrow Icon">
+            Back
+        </button>
+        <div class="country-detail-content" id="country-detail-content">
+            <p>Loading country details...</p>
+        </div>
+    `;
+  
+  const backButton = document.getElementById('back-button');
+  const countryDetailContent = document.getElementById('country-detail-content');
+  
+  backButton.addEventListener('click', () => {
+    navigateTo('/');
+  });
+  
+  const countryData = await fetchData(`${API_BASE_URL}/alpha/${encodeURIComponent(countryCode)}?fields=name,flags,population,region,subregion,capital,tld,currencies,languages,borders,cca3`);
+  
+  if (!countryData) {
+    countryDetailContent.innerHTML = `<p class="error-message">Failed to load country details or country not found.</p>`;
+    return;
+  }
+  
+  const nativeName = countryData.name.nativeName ?
+    Object.values(countryData.name.nativeName)[0]?.common || 'N/A' :
+    'N/A';
+  const currencies = countryData.currencies ?
+    Object.values(countryData.currencies).map(c => c.name).join(', ') :
+    'N/A';
+  const languages = countryData.languages ?
+    Object.values(countryData.languages).join(', ') :
+    'N/A';
+  
+  let borderCountryTagsHTML = '<p>N/A</p>';
+  if (countryData.borders && countryData.borders.length > 0) {
+    borderCountryTagsHTML = countryData.borders.map(borderCCA3 => `
+            <button class="border-country-tag" data-country-code="${borderCCA3}">
+                ${borderCCA3}
+            </button>
+        `).join('');
+  }
+  
+  countryDetailContent.innerHTML = `
+        <img src="${countryData.flags.png}" alt="${countryData.name.common} flag" class="detail-flag">
+        <div class="detail-info">
+            <h2>${countryData.name.common}</h2>
+            <div class="info-columns">
+                <div class="info-column">
+                    <p><strong>Native Name:</strong> ${nativeName}</p>
+                    <p><strong>Population:</strong> ${countryData.population.toLocaleString()}</p>
+                    <p><strong>Region:</strong> ${countryData.region}</p>
+                    <p><strong>Sub Region:</strong> ${countryData.subregion || 'N/A'}</p>
+                    <p><strong>Capital:</strong> ${countryData.capital ? countryData.capital[0] : 'N/A'}</p>
+                </div>
+                <div class="info-column">
+                    <p><strong>Top Level Domain:</strong> ${countryData.tld ? countryData.tld[0] : 'N/A'}</p>
+                    <p><strong>Currencies:</strong> ${currencies}</p>
+                    <p><strong>Languages:</strong> ${languages}</p>
+                </div>
+            </div>
+            <div class="border-countries">
+                <h3>Border Countries:</h3>
+                <div class="border-tags">
+                    ${borderCountryTagsHTML}
+                </div>
+            </div>
+        </div>
+    `;
+  
+  document.querySelectorAll('.border-country-tag').forEach(tag => {
+    tag.addEventListener('click', (e) => {
+      const borderCountryCode = e.target.dataset.countryCode;
+      if (borderCountryCode) {
+        navigateTo(`/${encodeURIComponent(borderCountryCode)}`);
+      }
+    });
+  });
 }
 
-// Event listener for country details 
-mainEl.addEventListener("click", (event) => {
-  const article = event.target.closest("article");
-  if (!article || !article.closest(".home")) return;
-
-  const cca3 = article.dataset.country;
-
-  window.location.href = `#/${cca3}`;
-});
-
-// search function 
-formEl.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  const cca3 = inputEl.value?.trim()?.toUpperCase();
-
-  if (!cca3)
-    return alert("Please enter a country code first!");
-
-  window.location.href = `#/${cca3}`;
-});
-
-// filter based on region 
-selectEl.addEventListener("change", () => {
-  const value = selectEl.value;
-  if (!value) return;
-
-  const articles = mainEl.querySelectorAll("article");
-
-  articles.forEach(el => {
-    if (el.dataset.region === value) el.style.display = "block";
-    else el.style.display = "none";
-  })
-})
-
-// set theme (dark/light)
-function setTheme(newTheme) {
-  document.body.dataset.theme = newTheme;
-  localStorage.setItem("theme", newTheme);
-
-  modeBtn.innerHTML = newTheme === "dark" ? "<span>&#9788;</span> Light mode" : "<span>&#9790;</span> Dark mode";
+function navigateTo(path) {
+  history.pushState(null, '', path);
+  renderApp();
 }
 
-// toggle theme button event listener 
-modeBtn.addEventListener("click", () => {
-  const newTheme = localStorage.getItem("theme") === "light" ? "dark" : "light";
+function renderApp() {
+  const path = window.location.pathname;
+  
+  if (path === '/') {
+    renderHomePage();
+  } else {
+    const countryCode = decodeURIComponent(path.slice(1));
+    if (countryCode?.length === 3) {
+      renderDetailPage(countryCode);
+    } else {
+      appContainer.innerHTML = `<p class="error-message">Page not found. <a href="/">Go to Home</a></p>`;
+    }
+  }
+}
 
-  setTheme(newTheme);
-});
-
-// back button event listener 
-backBtn.addEventListener("click", () => {
-  history.back();
-});
-
-// initialisation 
-window.addEventListener("DOMContentLoaded", () => {
-  // initial content load
-  handleRouting();
-
-  // Set the initial theme
-  const currentTheme = localStorage.getItem("theme") ||
-    (window.matchMedia("(prefers-color-scheme: dark)")?.matches ? "dark" : "light");
-  setTheme(currentTheme);
-});
-
-// routing 
-window.addEventListener("hashchange", handleRouting);
+document.addEventListener('DOMContentLoaded', renderApp);
+window.addEventListener('popstate', renderApp);

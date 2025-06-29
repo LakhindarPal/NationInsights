@@ -1,6 +1,6 @@
 # Frontend Mentor - REST Countries API with color theme switcher solution
 
-This is a solution to the [REST Countries API with color theme switcher challenge on Frontend Mentor](https://www.frontendmentor.io/challenges/rest-countries-api-with-color-theme-switcher-5cacc469fec04111f7b848ca). Frontend Mentor challenges help you improve your coding skills by building realistic projects. 
+This is a solution to the [REST Countries API with color theme switcher challenge on Frontend Mentor](https://www.frontendmentor.io/challenges/rest-countries-api-with-color-theme-switcher-5cacc469fec04111f7b848ca). Frontend Mentor challenges help you improve your coding skills by building realistic projects.
 
 ## Table of contents
 
@@ -27,7 +27,7 @@ Users should be able to:
 - Filter countries by region
 - Click on a country to see more detailed information on a separate page
 - Click through to the border countries on the detail page
-- Toggle the color scheme between light and dark mode *(optional)*
+- Toggle the color scheme between light and dark mode
 
 ### Screenshot
 
@@ -35,8 +35,8 @@ Users should be able to:
 
 ### Links
 
-- Solution URL: [https://github.com/LakhindarPal/NationInsights](https://github.com/LakhindarPal/NationInsights)
-- Live Site URL: [https://nationinsights.netlify.app/](https://nationinsights.netlify.app/)
+- Solution URL: [https://www.frontendmentor.io/solutions/get-detailed-country-insights-using-rest-countries-api-qTI1_Tq0N8](https://www.frontendmentor.io/solutions/get-detailed-country-insights-using-rest-countries-api-qTI1_Tq0N8)
+- Live Site URL: [https://nationiq.glitch.me/](https://nationiq.glitch.me/)
 
 ## My process
 
@@ -51,7 +51,6 @@ Users should be able to:
 ### What I learned
 
 In this project, I learned how to effectively integrate a REST API into a web application and utilize the data to dynamically generate content. I also improved my skills in implementing a theme switcher feature for toggling between light and dark modes. Additionally, I gained experience on how to implement routing using page hash.
-
 
 ### Continued development
 

@@ -3,51 +3,40 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explore the world effortlessly with Worldly! Dive into detailed country insights. Seamlessly navigate borders, search with ease, and indulge your curiosity with every discovery.">
-  <title>Worldly - Where In The World</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NationIQ – Explore Countries, Flags, Facts & More</title>
+  <meta name="title" content="NationIQ – Explore Countries, Flags, Facts & More">
+  <meta name="description" content="NationIQ helps you explore countries around the globe. Discover flags, capitals, population, languages, and more with our interactive world explorer.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nationiq.glitch.me/">
+  <meta property="og:title" content="NationIQ – Explore Countries, Flags, Facts & More">
+  <meta property="og:description" content="Learn about every country in the world with NationIQ. Find flags, population data, capitals, currencies, and more.">
+  <meta property="og:image" content="/assets/preview.jpg">
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://nationiq.glitch.me/">
+  <meta property="twitter:title" content="NationIQ – Explore Countries, Flags, Facts & More">
+  <meta property="twitter:description" content="Learn about countries around the world – flags, data, trivia and more.">
+  <meta property="twitter:image" content="/assets/preview.jpg">
+  <meta name="keywords" content="countries, world facts, flags, capitals, population, geography, quiz, NationIQ">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script src="main.js" defer></script>
+  <script type="module" src="main.js" defer></script>
 </head>
 
-<body>
-  <header>
-    <div>
+<body data-theme="light">
+  <header class="header">
+    <div class="container">
       <h1>Where in the world?</h1>
-      <button id="mode-btn"><span>&#9790;</span> Dark mode</button>
+      <button id="theme-toggle" class="theme-toggle">
+        <span class="theme-icon" data-icon="theme-icon" aria-hidden="true"></span>
+        Theme Mode
+      </button>
     </div>
-
-    <search>
-      <form>
-        <button type="submit">&#128269;</button>
-        <input type="text" name="country" aria-label="Search for a country" placeholder="Search for a country...">
-      </form>
-
-      <select name="region" aria-label="Filter by Region">
-        <option value="">Filter by Region
-        </option>
-        <option value="Africa">Africa</option>
-        <option value="Americas">Americas</option>
-        <option value="Asia">Asia</option>
-        <option value="Europe">Europe</option>
-        <option value="Oceania">Oceania</option>
-      </select>
-    </search>
-
-    <button id="back-btn"><span>&#8592;</span> Back</button>
   </header>
-
-  <main>
-    <!-- Content will be populated dynamically -->
+  
+  <main id="app-container" class="container">
   </main>
-
-  <footer>
-    <p>Challenge by <a href="https://www.frontendmentor.io" target="_blank">Frontend Mentor</a>.</p>
-    <p>Coded by <a href="https://lakhindar.is-a.dev" target="_blank">Lakhindar Pal</a>.</p>
-  </footer>
+  
 </body>
 
 </html>
